@@ -8,7 +8,7 @@
 #include "spinlock.h"
 #include "riscv.h"
 #include "defs.h"
-
+//内存分配
 void freerange(void *pa_start, void *pa_end);
 
 extern char end[]; // first address after kernel.
@@ -79,4 +79,19 @@ kalloc(void)
   if(r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
+}
+//计算空闲内存
+uint64 
+count_free_memory(void)
+{
+  struct run *next=kmem.freelist;
+  int n=0;
+  while (1)
+  {
+    if (next==0)
+      break;
+    n+=PGSIZE;
+    next=next->next;
+  }
+  return n;
 }

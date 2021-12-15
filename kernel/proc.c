@@ -693,3 +693,15 @@ procdump(void)
     printf("\n");
   }
 }
+//计算进程数量
+uint64
+count_proc(void)
+{
+  uint64 count=0;
+  for (int i = 0; i < NPROC; i++)
+  {
+    if (proc[i].state!=UNUSED)
+      count++;
+  }
+  return count;
+}

@@ -1,6 +1,5 @@
 #include "kernel/types.h"
 #include "kernel/riscv.h"
-#include "kernel/sysinfo.h"
 #include "user/user.h"
 
 
@@ -23,17 +22,20 @@ countfree()
   int n = 0;
 
   while(1){
+    //0xffffffffffffffff=-1表示分配失败
     if((uint64)sbrk(PGSIZE) == 0xffffffffffffffff){
       break;
     }
     n += PGSIZE;
   }
   sinfo(&info);
+  //内存已经用sbrk分配完，不应该还有内存
   if (info.freemem != 0) {
     printf("FAIL: there is no free mem, but sysinfo.freemem=%d\n",
       info.freemem);
     exit(1);
   }
+  //释放内存
   sbrk(-((uint64)sbrk(0) - sz0));
   return n;
 }
@@ -42,7 +44,7 @@ void
 testmem() {
   struct sysinfo info;
   uint64 n = countfree();
-  
+  //使用sysinfo系统调用获取内存大小，然后与使用sbrk获取到的空闲内存进行比较，验证正确性
   sinfo(&info);
 
   if (info.freemem!= n) {
@@ -89,7 +91,7 @@ testcall() {
     exit(1);
   }
 }
-
+//验证进程数量
 void testproc() {
   struct sysinfo info;
   uint64 nproc;

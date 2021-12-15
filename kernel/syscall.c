@@ -53,7 +53,7 @@ argraw(int n)
   return -1;
 }
 
-// Fetch the nth 32-bit system call argument.
+// Fetch the nth 32-bit system call argument. n指定寄存器编号
 int
 argint(int n, int *ip)
 {
@@ -104,7 +104,10 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_wait(void);
 extern uint64 sys_write(void);
 extern uint64 sys_uptime(void);
+extern uint64 sys_trace(void);
+extern uint64 sys_sysinfo(void);
 
+//系统调用函数数组
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -127,6 +130,35 @@ static uint64 (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_trace]   sys_trace,
+[SYS_sysinfo] sys_sysinfo,
+};
+
+static char *syscallcnames[] = {
+        [SYS_fork]    "fork",
+        [SYS_exit]    "exit",
+        [SYS_wait]    "wait",
+        [SYS_pipe]    "pipe",
+        [SYS_read]    "read",
+        [SYS_kill]    "kill",
+        [SYS_exec]    "exec",
+        [SYS_fstat]   "fstat",
+        [SYS_chdir]   "chdir",
+        [SYS_dup]     "dup",
+        [SYS_getpid]  "getpid",
+        [SYS_sbrk]    "sbrk",
+        [SYS_sleep]   "sleep",
+        [SYS_uptime]  "uptime",
+        [SYS_open]    "open",
+        [SYS_write]   "write",
+        [SYS_mknod]   "mknod",
+        [SYS_unlink]  "unlink",
+        [SYS_link]    "link",
+        [SYS_mkdir]   "mkdir",
+        [SYS_close]   "close",
+        [SYS_trace]   "trace",
+        [SYS_sysinfo] "sysinfo",
+        
 };
 
 void
@@ -137,7 +169,12 @@ syscall(void)
 
   num = p->trapframe->a7;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+    //执行系统调用，获取mask值
     p->trapframe->a0 = syscalls[num]();
+    if (num > 0 && ((1<<num) & p->tracemask)){
+        //打印每个系统调用信息
+        printf("%d: syscall %s -> %d\n",p->pid,syscallcnames[num],p->trapframe->a0);
+    }
   } else {
     printf("%d %s: unknown sys call %d\n",
             p->pid, p->name, num);
